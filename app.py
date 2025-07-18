@@ -1,37 +1,39 @@
 from flask import Flask, request, jsonify
-import requests
+import cv2
+import numpy as np
+import base64
 
 app = Flask(__name__)
 
-API_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
-URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+def base64_to_image(base64_str):
+    img_data = base64.b64decode(base64_str)
+    np_arr = np.frombuffer(img_data, np.uint8)
+    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    return img
 
-@app.route('/gemini', methods=['POST'])
-def gemini():
+def image_to_base64(img):
+    _, buffer = cv2.imencode('.jpg', img)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+    return img_base64
+
+@app.route('/process_image', methods=['POST'])
+def process_image():
     data = request.get_json()
-    pergunta = data.get('pergunta', '').strip()
-    if not pergunta:
-        return jsonify({"erro": "Pergunta vazia"}), 400
+    img_base64 = data.get('image_base64', '')
+    if not img_base64:
+        return jsonify({"erro": "Imagem não enviada"}), 400
+    
+    img = base64_to_image(img_base64)
+    if img is None:
+        return jsonify({"erro": "Imagem inválida"}), 400
 
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": pergunta}
-                ]
-            }
-        ]
-    }
+    # Processamento (ex: converter para cinza)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Converter de volta para 3 canais para não ter problema no retorno
+    processed_img = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
-    try:
-        res = requests.post(URL, json=payload)
-        res.raise_for_status()
-        resposta = res.json()
-        texto = resposta["candidates"][0]["content"]["parts"][0]["text"]
-        texto = texto.replace("\\n", " ")
-        return jsonify({"resposta": texto})
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+    img_processada_base64 = image_to_base64(processed_img)
+    return jsonify({"image_base64": img_processada_base64})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
