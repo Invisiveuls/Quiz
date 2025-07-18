@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 import re
 import html
+import os
 
 app = Flask(__name__)
 
@@ -9,14 +10,15 @@ GEMINI_API_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
 
 def limpar_texto(texto):
-    texto = html.unescape(texto)                    # Converte entidades HTML
-    texto = texto.encode().decode('unicode_escape') # Decodifica \uXXXX
-    texto = re.sub(r'\\[nrt]', ' ', texto)          # Remove \n, \r, \t visíveis
-    texto = re.sub(r'\\+', '', texto)                # Remove barras invertidas extras
-    texto = re.sub(r'\"', '', texto)                  # Remove aspas
+    texto = html.unescape(texto)               # Converte entidades HTML
+    texto = texto.replace("\\n", " ")          # Remove \n literal
+    texto = texto.encode().decode('unicode_escape')
+    texto = re.sub(r'\\[rt]', ' ', texto)      # Remove \r \t literal
+    texto = re.sub(r'\\+', '', texto)           # Remove barras extras
+    texto = re.sub(r'\"', '', texto)            # Remove aspas
     texto = re.sub(r'[\U00010000-\U0010ffff]', '', texto)  # Remove emojis
-    texto = re.sub(r'<.*?>', '', texto)              # Remove tags HTML
-    texto = re.sub(r'\s+', ' ', texto)               # Remove espaços extras
+    texto = re.sub(r'<.*?>', '', texto)         # Remove tags HTML
+    texto = re.sub(r'\s+', ' ', texto)          # Remove espaços extras
     return texto.strip()
 
 @app.route("/gemini", methods=["POST"])
@@ -44,6 +46,5 @@ def gemini():
         return jsonify({"erro": str(e)}), 500
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
