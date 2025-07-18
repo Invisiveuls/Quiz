@@ -4,7 +4,7 @@ import requests
 app = Flask(__name__)
 
 API_KEY = "AIzaSyBNAH9GQmuhjT45HizNxfXokZT__gGLxHI"
-API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + API_KEY
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 @app.route('/gemini', methods=['POST'])
 def gemini():
@@ -20,7 +20,7 @@ def gemini():
     response = requests.post(API_URL, json=payload, headers=headers)
     if response.status_code == 200:
         result = response.json()
-        # Extrair texto da resposta (ajuste conforme o formato real)
+        # Ajuste conforme resposta real da API
         text = result.get('candidates', [{}])[0].get('output', '')
         return jsonify({"response": text})
     else:
