@@ -4,38 +4,37 @@ import re
 
 app = Flask(__name__)
 
-API_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
+GEMINI_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
 
 def limpar_texto(texto):
-    # Remove caracteres unicode fora do ASCII básico
-    return re.sub(r'[^\x00-\x7F]+','', texto)
+    # Remove emojis e espaços extras
+    texto = re.sub(r'[\U0001F600-\U0001F64F]', '', texto)
+    texto = re.sub(r'\\n', ' ', texto)
+    return texto.strip()
 
-@app.route("/gemini", methods=["POST"])
+@app.route('/gemini', methods=['POST'])
 def gemini():
-    data = request.get_json()
-    text = data.get("text", "")
+    data = request.json
+    texto = data.get('texto', '')
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": texto}
+                ]
+            }
+        ]
+    }
+
+    headers = {"Content-Type": "application/json"}
+
+    r = requests.post(GEMINI_URL, json=payload, headers=headers)
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
-        body = {
-            "contents": [
-                {"parts": [{"text": text}]}
-            ]
-        }
-        headers = {"Content-Type": "application/json"}
-        r = requests.post(url, json=body, headers=headers, timeout=30)
-        r.raise_for_status()
-        res = r.json()
-        resultado_raw = res['candidates'][0]['content']['parts'][0]['text']
-        resultado_limpo = limpar_texto(resultado_raw)
-        return jsonify({"resposta": resultado_limpo})
-    except Exception as e:
-        return jsonify({"resposta": "Erro: " + str(e)}), 500
+        resposta = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+    except:
+        resposta = "Erro na resposta da API."
 
-@app.route("/")
-def home():
-    return "Servidor Gemini online."
-
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    resposta_limpa = limpar_texto(resposta)
+    return jsonify({"resposta": resposta_limpa})
