@@ -9,12 +9,16 @@ GEMINI_API_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
 def gemini():
     data = request.get_json()
     text = data.get("text", "")
-    
+
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         body = {
             "contents": [
-                {"parts": [{"text": text}]}
+                {
+                    "parts": [
+                        {"text": text}
+                    ]
+                }
             ]
         }
         headers = {"Content-Type": "application/json"}
@@ -23,8 +27,8 @@ def gemini():
         res_json = r.json()
         result = res_json['candidates'][0]['content']['parts'][0]['text']
         return jsonify({"resposta": result})
-    except:
-        return jsonify({"resposta": "Erro"}), 500
+    except Exception as e:
+        return jsonify({"resposta": "Erro: " + str(e)}), 500
 
 @app.route("/")
 def home():
