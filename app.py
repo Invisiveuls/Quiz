@@ -9,7 +9,10 @@ URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash
 @app.route('/gemini', methods=['POST'])
 def gemini():
     data = request.get_json()
-    pergunta = data.get('pergunta', '')
+    pergunta = data.get('pergunta', '').strip()
+    if not pergunta:
+        return jsonify({"erro": "Pergunta vazia"}), 400
+
     payload = {
         "contents": [
             {
@@ -19,12 +22,13 @@ def gemini():
             }
         ]
     }
+
     try:
         res = requests.post(URL, json=payload)
         res.raise_for_status()
         resposta = res.json()
         texto = resposta["candidates"][0]["content"]["parts"][0]["text"]
-        texto = texto.replace("\\n", " ")  # Remove \n literal
+        texto = texto.replace("\\n", " ")
         return jsonify({"resposta": texto})
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
