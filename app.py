@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-GEMINI_API_KEY = "AIzaSyBNAH9GQmuhjT45HizNxfXokZT__gGLxHI"
+GEMINI_API_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
 
 @app.route("/gemini", methods=["POST"])
 def gemini():
