@@ -1,56 +1,37 @@
-button1.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View v) {
-        final String texto = edittext1.getText().toString();
+from flask import Flask, request, jsonify
+import requests
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    java.net.URL url = new java.net.URL("https://flask-ozz6.onrender.com/gemini");
-                    javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                    conn.setDoOutput(true);
+app = Flask(__name__)
 
-                    String jsonBody = "{\"text\":\"" + texto.replace("\"", "\\\"") + "\"}";
-                    java.io.OutputStream os = conn.getOutputStream();
-                    os.write(jsonBody.getBytes("UTF-8"));
-                    os.flush();
-                    os.close();
+GEMINI_API_KEY = "AIzaSyCrAZlp9ayGCTMfGEaaMXloERIzn8se6vs"
 
-                    java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
-                    final StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        sb.append(line);
-                    }
-                    br.close();
-                    conn.disconnect();
-
-                    final String resposta = sb.toString();
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String[] partes = resposta.split("\"resposta\":\\s*\"");
-                                String textoResposta = (partes.length > 1) ? partes[1].split("\"")[0] : "Resposta inválida";
-                                textview1.setText(textoResposta);
-                            } catch (Exception e) {
-                                textview1.setText("Erro ao interpretar resposta");
-                            }
-                        }
-                    });
-                } catch (final Exception e) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            textview1.setText("Erro: " + e.toString());
-                        }
-                    });
+@app.route("/gemini", methods=["POST"])
+def gemini():
+    data = request.get_json()
+    text = data.get("text", "")
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+        body = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": text}
+                    ]
                 }
-            }
-        }).start();
-    }
-});
+            ]
+        }
+        headers = {"Content-Type": "application/json"}
+        r = requests.post(url, json=body, headers=headers, timeout=30)
+        r.raise_for_status()
+        res_json = r.json()
+        result = res_json['candidates'][0]['content']['parts'][0]['text']
+        return jsonify({"resposta": result})
+    except Exception as e:
+        return jsonify({"resposta": "Erro: " + str(e)}), 500
+
+@app.route("/")
+def home():
+    return "Servidor Gemini online."
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
