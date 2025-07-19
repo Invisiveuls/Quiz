@@ -2,15 +2,12 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-@app.route('/check', methods=['POST'])
+@app.route('/', methods=['POST'])
 def check_par_impar():
     numero = request.form.get('numero', '')
     try:
         n = int(numero)
-        if n % 2 == 0:
-            return 'Par'
-        else:
-            return 'Ímpar'
+        return 'Par' if n % 2 == 0 else 'Ímpar'
     except:
         return 'Entrada inválida'
 
