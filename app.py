@@ -2,23 +2,18 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return "API Flask no Render! Use a rota /check_number para verificar se um número é par ou ímpar."
-
-@app.route('/check_number', methods=['POST'])
+@app.route('/check_number', methods=['GET', 'POST'])  # Aceita ambos os métodos
 def check_number():
-    data = request.get_json()  # Pega os dados JSON da requisição
+    # Se for GET (teste via navegador)
+    if request.method == 'GET':
+        number = request.args.get('number', default=0, type=int)
+    # Se for POST (requisição do app)
+    else:
+        data = request.get_json()
+        number = int(data.get('number', 0))
     
-    if not data or 'number' not in data:
-        return jsonify({"error": "Envie um número no formato JSON: {'number': 5}"}), 400
-    
-    try:
-        number = int(data['number'])
-        result = "PAR" if number % 2 == 0 else "ÍMPAR"
-        return jsonify({"result": result})
-    except ValueError:
-        return jsonify({"error": "O valor deve ser um número inteiro!"}), 400
+    result = "PAR" if number % 2 == 0 else "ÍMPAR"
+    return jsonify({"result": result, "number": number})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)  # Render usa a porta 10000
+    app.run(host='0.0.0.0', port=10000)
