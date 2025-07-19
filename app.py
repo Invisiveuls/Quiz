@@ -1,11 +1,23 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
+import cv2
+import numpy as np
+import base64
 
 app = Flask(__name__)
 
-@app.route('/process_image_raw', methods=['POST'])
-def process_image_raw():
-    print("Requisição recebida!")  # Para ver no console
-    return "OK"
+@app.route('/process_image', methods=['POST'])
+def process_image():
+    data = request.get_json()
+    img_b64 = data['image']
+    img_bytes = base64.b64decode(img_b64)
+    nparr = np.frombuffer(img_bytes, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, buf = cv2.imencode('.png', gray)
+    out_b64 = base64.b64encode(buf).decode('utf-8')
+
+    return jsonify({"image": out_b64})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
