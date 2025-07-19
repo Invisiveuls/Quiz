@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from PIL import Image, ImageOps
 import io
@@ -20,11 +21,11 @@ def process_image():
         processed.save(buffer, format='PNG')
         encoded_result = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-        # Retorna texto puro para evitar JSON ou cabeçalhos extras
         return encoded_result, 200, {'Content-Type': 'text/plain'}
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
