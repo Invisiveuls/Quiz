@@ -20,11 +20,9 @@ def process_image():
         processed.save(buffer, format='PNG')
         encoded_result = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-        # Para debug, imprime os primeiros caracteres da base64
-        print("Base64 length:", len(encoded_result))
-        print("Base64 preview:", encoded_result[:100])
+        # Retorna texto puro para evitar JSON ou cabeçalhos extras
+        return encoded_result, 200, {'Content-Type': 'text/plain'}
 
-        return encoded_result  # Retorna só a string base64 pura, sem JSON
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
