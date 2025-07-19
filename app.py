@@ -1,22 +1,24 @@
 from flask import Flask, request, jsonify
-from PIL import Image
-import io
-import base64
 
 app = Flask(__name__)
 
-@app.route('/process_image', methods=['POST'])
-def process_image():
-    data = request.get_json()
-    img_b64 = data['image'].split(',')[1]
-    img_bytes = base64.b64decode(img_b64)
-    img = Image.open(io.BytesIO(img_bytes)).convert('L')  # cinza
+@app.route('/')
+def home():
+    return "API Flask no Render! Use a rota /check_number para verificar se um número é par ou ímpar."
 
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    img_out_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-
-    return jsonify({'image': 'data:image/png;base64,' + img_out_b64})
+@app.route('/check_number', methods=['POST'])
+def check_number():
+    data = request.get_json()  # Pega os dados JSON da requisição
+    
+    if not data or 'number' not in data:
+        return jsonify({"error": "Envie um número no formato JSON: {'number': 5}"}), 400
+    
+    try:
+        number = int(data['number'])
+        result = "PAR" if number % 2 == 0 else "ÍMPAR"
+        return jsonify({"result": result})
+    except ValueError:
+        return jsonify({"error": "O valor deve ser um número inteiro!"}), 400
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=10000)  # Render usa a porta 10000
