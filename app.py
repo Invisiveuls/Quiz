@@ -1,15 +1,22 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
+from PIL import Image, ImageOps
+import io
 
 app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
-def check_par_impar():
-    numero = request.form.get('numero', '')
-    try:
-        n = int(numero)
-        return 'Par' if n % 2 == 0 else 'Ímpar'
-    except:
-        return 'Entrada inválida'
+def process_image():
+    file = request.files['image']
+    image = Image.open(file.stream)
+    
+    # Exemplo: inverter cores
+    processed_image = ImageOps.invert(image.convert('RGB'))
+
+    buffer = io.BytesIO()
+    processed_image.save(buffer, format='PNG')
+    buffer.seek(0)
+
+    return send_file(buffer, mimetype='image/png')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run()
