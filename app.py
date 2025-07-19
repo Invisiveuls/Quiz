@@ -5,21 +5,17 @@ import base64
 
 app = Flask(__name__)
 
-@app.route('/', methods=['POST'])
+@app.route('/image', methods=['POST'])
 def process_image():
     try:
         data = request.get_json()
         if not data or 'image' not in data:
             return jsonify({"error": "Campo 'image' não encontrado"}), 400
 
-        # Decodifica imagem Base64
         img_data = base64.b64decode(data['image'])
         image = Image.open(io.BytesIO(img_data)).convert('RGB')
-
-        # Processa a imagem (exemplo: inverter cores)
         processed = ImageOps.invert(image)
 
-        # Codifica de volta para Base64
         buffer = io.BytesIO()
         processed.save(buffer, format='PNG')
         encoded_result = base64.b64encode(buffer.getvalue()).decode('utf-8')
