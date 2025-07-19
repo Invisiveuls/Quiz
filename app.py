@@ -1,25 +1,33 @@
 import os
-from flask import Flask, request, jsonify
-from PIL import Image, ImageOps
-import io
+import cv2
+import numpy as np
 import base64
+import io
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 @app.route('/image', methods=['POST'])
 def process_image():
     try:
         data = request.get_json()
-        if not data or 'image' not in data:
+        if 'image' not in data:
             return jsonify({"error": "Campo 'image' não encontrado"}), 400
 
         img_data = base64.b64decode(data['image'])
-        image = Image.open(io.BytesIO(img_data)).convert('RGB')
-        processed = ImageOps.invert(image)
+        npimg = np.frombuffer(img_data, np.uint8)
+        img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
 
-        buffer = io.BytesIO()
-        processed.save(buffer, format='PNG')
-        encoded_result = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+        for (x, y, w, h) in faces:
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+        _, buffer = cv2.imencode('.png', img)
+        encoded_result = base64.b64encode(buffer).decode('utf-8')
 
         return encoded_result, 200, {'Content-Type': 'text/plain'}
 
