@@ -1,32 +1,30 @@
 from flask import Flask, request, jsonify
+import base64
 import cv2
 import numpy as np
-import base64
-import os
 
 app = Flask(__name__)
 
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-@app.route("/image", methods=["POST"])
-def detect():
+@app.route('/image', methods=['POST'])
+def handle_image():
     try:
-        data = request.get_json()
-        b64 = data.get("image")
-        if not b64:
-            return jsonify({"error": "Sem imagem"}), 400
+        data = request.json
+        if 'image' not in data:
+            return jsonify({'error': 'Imagem não enviada'}), 400
 
-        img_data = base64.b64decode(b64)
-        np_img = np.frombuffer(img_data, np.uint8)
-        img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+        b64_str = data['image']
+        img_data = base64.b64decode(b64_str)
+        np_arr = np.frombuffer(img_data, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
+        # Processamento opcional (ex: converter para tons de cinza)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        _, jpeg = cv2.imencode('.jpg', gray)
+        encoded = base64.b64encode(jpeg.tobytes()).decode('utf-8')
 
-        return jsonify({"rostos": len(faces)})
+        return jsonify({'message': 'Imagem recebida com sucesso', 'preview': encoded})
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
